@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    image: respira-lab:local
+    environment:
+      ROUTERAI_API_KEY: ${ROUTERAI_API_KEY:-}
+      RESPIRA_SSE_URL: http://sse:8000/sse
+    ports:
+      - "127.0.0.1:${RESPIRA_WEB_PORT:-8512}:8512"
+    depends_on:
+      sse:
+        condition: service_healthy
+  sse:
+    image: respira-lab:local
+    pull_policy: never
+    command: ["python", "-m", "respira.server", "sse", "--host", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:${RESPIRA_SSE_PORT:-8002}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
